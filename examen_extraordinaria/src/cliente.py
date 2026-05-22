@@ -12,6 +12,8 @@ COMANDO_NUMERO = "NUMERO"
 COMANDO_SALIR = "SALIR"
 RESPUESTA_OK = "OK"
 MENSAJE_ERROR_COMUNICACION = "ERROR: no se pudo comunicar con el servidor"
+MENSAJE_ERROR_DIRECCION = "ERROR: direccion del servidor no valida"
+PROMPT_DIRECCION_SERVIDOR = "Direccion completa del servidor (host:puerto): "
 
 
 class ClienteUDP:
@@ -30,6 +32,49 @@ class ClienteUDP:
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.socket.settimeout(self.timeout)
         self.socket.connect((self.host, self.puerto))
+
+    @classmethod
+    def parsear_direccion_servidor(cls, direccion):
+        partes = direccion.strip().split(":")
+        if len(partes) != 2:
+            raise ValueError(MENSAJE_ERROR_DIRECCION)
+
+        host, puerto_texto = partes
+        if not host or not puerto_texto:
+            raise ValueError(MENSAJE_ERROR_DIRECCION)
+
+        try:
+            puerto = int(puerto_texto)
+        except ValueError as exc:
+            raise ValueError(MENSAJE_ERROR_DIRECCION) from exc
+
+        return host, puerto
+
+    @classmethod
+    def pedir_direccion_servidor(cls, entrada=None, salida=None):
+        entrada = entrada or sys.stdin
+        salida = salida or sys.stdout
+
+        print(PROMPT_DIRECCION_SERVIDOR, end="", file=salida, flush=True)
+        direccion = entrada.readline().strip()
+        return cls.parsear_direccion_servidor(direccion)
+
+    @classmethod
+    def ejecutar_desde_terminal(cls, entrada=None, salida=None, timeout=TIMEOUT_POR_DEFECTO):
+        entrada = entrada or sys.stdin
+        salida = salida or sys.stdout
+
+        try:
+            host, puerto = cls.pedir_direccion_servidor(entrada=entrada, salida=salida)
+            cliente = cls(host=host, puerto=puerto, timeout=timeout)
+        except (OSError, ValueError):
+            print(MENSAJE_ERROR_DIRECCION, file=salida)
+            return
+
+        try:
+            cliente.ejecutar_interactivo(entrada=entrada, salida=salida)
+        finally:
+            cliente.cerrar()
 
     def enviar_mensaje(self, mensaje):
         self.socket.send(mensaje.encode("utf-8"))

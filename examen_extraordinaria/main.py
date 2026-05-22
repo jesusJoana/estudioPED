@@ -17,11 +17,7 @@ def main():
         return 0
 
     if modo == "cliente":
-        cliente = ClienteUDP()
-        try:
-            cliente.ejecutar_interactivo()
-        finally:
-            cliente.cerrar()
+        ClienteUDP.ejecutar_desde_terminal()
         return 0
 
     print("Uso: python main.py servidor|cliente")
