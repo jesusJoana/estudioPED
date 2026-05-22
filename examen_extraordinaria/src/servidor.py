@@ -1,4 +1,5 @@
 import socket
+import sys
 
 
 HOST_POR_DEFECTO = "127.0.0.1"
@@ -32,6 +33,7 @@ class ServidorUDP:
         self.debe_terminar = False
 
     def procesar_mensaje(self, mensaje, direccion_cliente):
+        self._registrar_mensaje_recibido(mensaje, direccion_cliente)
         self._contar_mensaje(direccion_cliente)
 
         partes = mensaje.split()
@@ -67,6 +69,10 @@ class ServidorUDP:
         self.mensajes_por_cliente[direccion_cliente] = (
             self.mensajes_por_cliente.get(direccion_cliente, 0) + 1
         )
+
+    def _registrar_mensaje_recibido(self, mensaje, direccion_cliente):
+        ip_cliente = direccion_cliente[0]
+        print(f"Cliente {ip_cliente} envio: {mensaje}", file=sys.stderr)
 
     def _procesar_buscar(self, partes):
         if len(partes) != 2:
