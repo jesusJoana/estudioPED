@@ -24,10 +24,12 @@ class ServidorUDP:
         host=HOST_POR_DEFECTO,
         puerto=PUERTO_POR_DEFECTO,
         rutas_ficheros=None,
+        salida_error=None,
     ):
         self.host = host
         self.puerto = puerto
         self.rutas_ficheros = rutas_ficheros or RUTAS_POR_DEFECTO
+        self.salida_error = salida_error
         self.busquedas_realizadas = 0
         self.mensajes_por_cliente = {}
         self.debe_terminar = False
@@ -71,8 +73,17 @@ class ServidorUDP:
         )
 
     def _registrar_mensaje_recibido(self, mensaje, direccion_cliente):
+        print(
+            self._formatear_log_cliente(mensaje, direccion_cliente),
+            file=self._obtener_salida_error(),
+        )
+
+    def _formatear_log_cliente(self, mensaje, direccion_cliente):
         ip_cliente = direccion_cliente[0]
-        print(f"Cliente {ip_cliente} envio: {mensaje}", file=sys.stderr)
+        return f"Cliente {ip_cliente} envio: {mensaje}"
+
+    def _obtener_salida_error(self):
+        return self.salida_error or sys.stderr
 
     def _procesar_buscar(self, partes):
         if len(partes) != 2:
