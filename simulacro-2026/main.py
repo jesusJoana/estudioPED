@@ -1,11 +1,12 @@
 import sys
 
+from src.cliente import ClienteTCP
 from src.servidor import ServidorTCP
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Uso: python main.py servidor")
+        print("Uso: python main.py servidor|cliente")
         return 1
 
     modo = sys.argv[1]
@@ -13,6 +14,11 @@ def main():
     if modo == "servidor":
         servidor = ServidorTCP()
         servidor.iniciar()
+        return 0
+
+    if modo == "cliente":
+        cliente = ClienteTCP()
+        cliente.ejecutar()
         return 0
 
     print("Modo no reconocido")
