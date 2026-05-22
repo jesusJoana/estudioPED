@@ -1,0 +1,117 @@
+INSTALACION
+===========
+
+Requisitos
+----------
+
+- Linux
+- Python 3
+- make
+
+No se usan dependencias externas.
+
+
+Preparar el entorno
+-------------------
+
+Desde la carpeta examen_extraordinaria:
+
+make install
+
+Este comando crea el entorno virtual venv y actualiza pip.
+
+
+Ejecutar pruebas
+----------------
+
+make test
+
+Las pruebas usan unittest y estan separadas en:
+
+- tests/test_server.py
+- tests/test_client.py
+- tests/test_integracion.py
+
+
+Ejecucion del servidor
+----------------------
+
+El servidor se lanza con:
+
+make run-server
+
+El servidor escucha por UDP en:
+
+127.0.0.1:16063
+
+Al ejecutarlo de esta forma, los mensajes escritos por error estandar se veran
+en la propia terminal del servidor.
+
+Si se quiere guardar esa salida de error en un fichero para revisar despues la
+IP del cliente y los mensajes recibidos, se puede lanzar asi:
+
+make run-server 2> server.log
+
+De esta forma, la salida normal del servidor queda en la terminal y la salida
+de error queda guardada en server.log.
+
+Ejemplo de contenido de server.log:
+
+Cliente 127.0.0.1 envio: BUSCAR root
+Cliente 127.0.0.1 envio: NUMERO
+Cliente 127.0.0.1 envio: SALIR
+
+
+Ejecucion del cliente
+---------------------
+
+En otra terminal:
+
+make run-client
+
+El cliente preguntara:
+
+Direccion completa del servidor (host:puerto):
+
+Debe introducirse, por ejemplo:
+
+127.0.0.1:16063
+
+Despues se introducen mensajes del protocolo, uno por linea.
+
+Ejemplo:
+
+BUSCAR root
+NUMERO
+SALIR
+
+
+Comandos make disponibles
+-------------------------
+
+make install
+  Crea el entorno virtual.
+
+make test
+  Ejecuta todas las pruebas.
+
+make run-server
+  Lanza el servidor.
+
+make run-client
+  Lanza el cliente.
+
+make clean
+  Elimina ficheros temporales de Python.
+
+
+Apagado
+-------
+
+El servidor solo termina cuando recibe un mensaje SALIR valido.
+
+SALIR es valido si el cliente ha enviado al menos 3 mensajes. El propio SALIR
+cuenta como mensaje enviado.
+
+Si se envia SALIR antes de tiempo, el servidor responde con un aviso y continua
+ejecutandose.
