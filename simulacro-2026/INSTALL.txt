@@ -1,0 +1,99 @@
+INSTALL - Instalacion y ejecucion
+=================================
+
+1. Requisitos previos
+---------------------
+
+Sistema recomendado:
+
+- Linux.
+- Python 3.
+- make.
+
+El proyecto usa exclusivamente libreria estandar de Python. No requiere
+dependencias externas.
+
+2. Preparacion del entorno
+--------------------------
+
+Situarse en la carpeta del proyecto:
+
+cd simulacro-2026
+
+Crear el entorno virtual:
+
+make install
+
+Este comando crea la carpeta venv y actualiza pip. Si existiera un fichero
+requirements.txt, tambien instalaria sus dependencias.
+
+3. Ejecutar pruebas
+-------------------
+
+Para comprobar que el proyecto funciona correctamente:
+
+make test
+
+Resultado esperado:
+
+OK
+
+4. Ejecutar el servidor
+-----------------------
+
+En una terminal:
+
+make run-server
+
+El servidor queda escuchando en:
+
+Host: 127.0.0.1
+Puerto: 16063
+
+Para detenerlo, pulsar Ctrl+C.
+
+5. Ejecutar el cliente
+----------------------
+
+En otra terminal, con el servidor ya arrancado:
+
+make run-client
+
+Ejemplo de secuencia:
+
+FECHA
+HORA
+OTRO
+SALIR
+
+El cliente debe mostrar la fecha, la hora, ERROR y despues terminar al escribir
+SALIR, porque ya se habran enviado 3 peticiones.
+
+6. Comprobacion manual rapida
+-----------------------------
+
+Terminal 1:
+
+make run-server
+
+Terminal 2:
+
+make run-client
+
+Dentro del cliente:
+
+FECHA
+HORA
+PRUEBA
+SALIR
+
+7. Limpieza
+-----------
+
+Para eliminar ficheros temporales de Python:
+
+make clean
+
+Si se desea eliminar completamente el entorno virtual:
+
+rm -rf venv
