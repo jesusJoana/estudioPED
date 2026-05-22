@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import tempfile
 import unittest
@@ -124,6 +126,27 @@ class TestServidorUDP(unittest.TestCase):
             with self.subTest(mensaje=mensaje):
                 respuesta = self.servidor.procesar_mensaje(mensaje, self.cliente)
                 self.assertEqual(respuesta, "ERROR")
+
+    def test_servidor_modificado_escribe_ip_y_mensaje_en_stderr(self):
+        """Iteracion 4: al recibir mensaje, el servidor imprime IP y mensaje en stderr."""
+        salida_error = io.StringIO()
+
+        with contextlib.redirect_stderr(salida_error):
+            self.servidor.procesar_mensaje("BUSCAR root", self.cliente)
+
+        texto_error = salida_error.getvalue()
+        self.assertIn("127.0.0.1", texto_error)
+        self.assertIn("BUSCAR root", texto_error)
+
+    def test_servidor_modificado_no_altera_respuesta_del_protocolo(self):
+        """Iteracion 4: el log por stderr no cambia la respuesta enviada al cliente."""
+        salida_error = io.StringIO()
+
+        with contextlib.redirect_stderr(salida_error):
+            respuesta = self.servidor.procesar_mensaje("NUMERO", self.cliente)
+
+        self.assertEqual(respuesta, "OK 0")
+        self.assertIn("Cliente 127.0.0.1 envio: NUMERO", salida_error.getvalue())
 
 
 if __name__ == "__main__":
