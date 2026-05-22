@@ -40,10 +40,10 @@ class ClienteUDP:
         salida = salida or sys.stdout
 
         for mensaje in mensajes:
-            debe_terminar = self._enviar_e_imprimir(mensaje, salida)
-            if debe_terminar is None:
+            resultado = self._enviar_e_imprimir(mensaje, salida)
+            if resultado is None:
                 break
-            if debe_terminar:
+            if resultado:
                 return True
 
         return False
@@ -56,11 +56,11 @@ class ClienteUDP:
         mensajes_enviados = 0
 
         while True:
-            mensaje = self._leer_mensaje(entrada, mensajes_enviados)
+            mensaje = self._obtener_siguiente_mensaje(entrada, mensajes_enviados)
             if not mensaje:
                 break
 
-            print(f"Mensaje {numero_mensaje}: {mensaje}", file=salida)
+            self._imprimir_mensaje(numero_mensaje, mensaje, salida)
             debe_terminar = self.ejecutar_mensajes([mensaje], salida=salida)
             numero_mensaje += 1
             mensajes_enviados += 1
@@ -86,12 +86,15 @@ class ClienteUDP:
     def _es_salida_confirmada(self, mensaje, respuesta):
         return mensaje == COMANDO_SALIR and respuesta == RESPUESTA_OK
 
-    def _leer_mensaje(self, entrada, mensajes_enviados):
+    def _obtener_siguiente_mensaje(self, entrada, mensajes_enviados):
         linea = entrada.readline()
 
         if linea:
             return linea.rstrip("\n")
 
+        return self._mensaje_automatico_para_completar_minimo(mensajes_enviados)
+
+    def _mensaje_automatico_para_completar_minimo(self, mensajes_enviados):
         if mensajes_enviados >= MINIMO_MENSAJES_CLIENTE:
             return None
 
@@ -99,3 +102,6 @@ class ClienteUDP:
             return COMANDO_SALIR
 
         return COMANDO_NUMERO
+
+    def _imprimir_mensaje(self, numero_mensaje, mensaje, salida):
+        print(f"Mensaje {numero_mensaje}: {mensaje}", file=salida)
