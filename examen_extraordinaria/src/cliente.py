@@ -7,6 +7,8 @@ PUERTO_POR_DEFECTO = 16063
 TAMANO_BUFFER = 65535
 TIMEOUT_POR_DEFECTO = 5.0
 
+COMANDO_SALIR = "SALIR"
+RESPUESTA_OK = "OK"
 MENSAJE_ERROR_COMUNICACION = "ERROR: no se pudo comunicar con el servidor"
 
 
@@ -36,15 +38,10 @@ class ClienteUDP:
         salida = salida or sys.stdout
 
         for mensaje in mensajes:
-            try:
-                respuesta = self.enviar_mensaje(mensaje)
-            except OSError:
-                print(MENSAJE_ERROR_COMUNICACION, file=salida)
+            debe_terminar = self._enviar_e_imprimir(mensaje, salida)
+            if debe_terminar is None:
                 break
-
-            print(respuesta, file=salida)
-
-            if mensaje == "SALIR" and respuesta == "OK":
+            if debe_terminar:
                 return True
 
         return False
@@ -70,3 +67,16 @@ class ClienteUDP:
         if not self.esta_cerrado:
             self.socket.close()
             self.esta_cerrado = True
+
+    def _enviar_e_imprimir(self, mensaje, salida):
+        try:
+            respuesta = self.enviar_mensaje(mensaje)
+        except OSError:
+            print(MENSAJE_ERROR_COMUNICACION, file=salida)
+            return None
+
+        print(respuesta, file=salida)
+        return self._es_salida_confirmada(mensaje, respuesta)
+
+    def _es_salida_confirmada(self, mensaje, respuesta):
+        return mensaje == COMANDO_SALIR and respuesta == RESPUESTA_OK
