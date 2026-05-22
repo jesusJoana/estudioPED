@@ -11,6 +11,7 @@ class ServidorUDPDePrueba:
 
     def __init__(self, respuestas=None, responder=True):
         self.respuestas = list(respuestas or [])
+        self.total_respuestas = len(self.respuestas)
         self.responder = responder
         self.mensajes_recibidos = []
         self._listo = threading.Event()
@@ -34,7 +35,7 @@ class ServidorUDPDePrueba:
             self._puerto = sock.getsockname()[1]
             self._listo.set()
 
-            while len(self.mensajes_recibidos) < max(1, len(self.respuestas)):
+            while len(self.mensajes_recibidos) < max(1, self.total_respuestas):
                 try:
                     datos, direccion = sock.recvfrom(65535)
                 except socket.timeout:
@@ -108,6 +109,26 @@ class TestClienteUDP(unittest.TestCase):
         servidor.esperar_fin()
 
         self.assertEqual(servidor.mensajes_recibidos, ["NUMERO", "BUSCAR inexistente", "SALIR"])
+
+    def test_cliente_interactivo_no_termina_si_salir_no_recibe_ok(self):
+        """Iteracion 2: SALIR no cierra el cliente hasta recibir OK del servidor."""
+        servidor = ServidorUDPDePrueba(
+            respuestas=[
+                "Aun solo se han enviado 1 mensajes de los 3 necesarios",
+                "OK 0",
+                "OK",
+            ]
+        )
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.5)
+        entrada = io.StringIO("SALIR\nNUMERO\nSALIR\nNUMERO\n")
+        salida = io.StringIO()
+
+        cliente.ejecutar_interactivo(entrada=entrada, salida=salida)
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertEqual(servidor.mensajes_recibidos, ["SALIR", "NUMERO", "SALIR"])
 
     def test_cliente_imprime_error_si_no_recibe_respuesta(self):
         """Iteracion 2: el cliente informa de error si el servidor no responde."""
