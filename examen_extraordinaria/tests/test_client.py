@@ -1,0 +1,139 @@
+import io
+import socket
+import threading
+import unittest
+
+from src.cliente import ClienteUDP
+
+
+class ServidorUDPDePrueba:
+    """Servidor UDP minimo para probar la clase cliente."""
+
+    def __init__(self, respuestas=None, responder=True):
+        self.respuestas = list(respuestas or [])
+        self.responder = responder
+        self.mensajes_recibidos = []
+        self._listo = threading.Event()
+        self._hilo = threading.Thread(target=self._ejecutar, daemon=True)
+
+    def iniciar(self):
+        self._hilo.start()
+        self._listo.wait(timeout=1)
+
+    def esperar_fin(self):
+        self._hilo.join(timeout=1)
+
+    @property
+    def puerto(self):
+        return self._puerto
+
+    def _ejecutar(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+            sock.bind(("127.0.0.1", 0))
+            sock.settimeout(0.5)
+            self._puerto = sock.getsockname()[1]
+            self._listo.set()
+
+            while len(self.mensajes_recibidos) < max(1, len(self.respuestas)):
+                try:
+                    datos, direccion = sock.recvfrom(65535)
+                except socket.timeout:
+                    break
+
+                mensaje = datos.decode("utf-8")
+                self.mensajes_recibidos.append(mensaje)
+
+                if self.responder and self.respuestas:
+                    respuesta = self.respuestas.pop(0)
+                    sock.sendto(respuesta.encode("utf-8"), direccion)
+
+
+class TestClienteUDP(unittest.TestCase):
+    """Pruebas unitarias de la Iteracion 2: Cliente."""
+
+    def test_cliente_envia_mensaje_udp_y_recibe_respuesta(self):
+        """Iteracion 2: el cliente envia un datagrama UDP y recibe respuesta."""
+        servidor = ServidorUDPDePrueba(respuestas=["OK 0"])
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.5)
+
+        respuesta = cliente.enviar_mensaje("NUMERO")
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertEqual(respuesta, "OK 0")
+        self.assertEqual(servidor.mensajes_recibidos, ["NUMERO"])
+
+    def test_cliente_imprime_respuesta_recibida(self):
+        """Iteracion 2: el cliente imprime en salida estandar la respuesta."""
+        servidor = ServidorUDPDePrueba(respuestas=["OK 1"])
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.5)
+        salida = io.StringIO()
+
+        cliente.ejecutar_mensajes(["NUMERO"], salida=salida)
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertIn("OK 1", salida.getvalue())
+
+    def test_cliente_procesa_secuencia_de_al_menos_tres_mensajes(self):
+        """Iteracion 2: el cliente puede enviar una secuencia de 3 mensajes."""
+        servidor = ServidorUDPDePrueba(respuestas=["1\nroot", "OK 1", "OK"])
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.5)
+        salida = io.StringIO()
+
+        cliente.ejecutar_mensajes(["BUSCAR root", "NUMERO", "SALIR"], salida=salida)
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertEqual(servidor.mensajes_recibidos, ["BUSCAR root", "NUMERO", "SALIR"])
+        self.assertIn("1\nroot", salida.getvalue())
+        self.assertIn("OK 1", salida.getvalue())
+        self.assertIn("OK", salida.getvalue())
+
+    def test_cliente_termina_tras_recibir_ok_a_salir(self):
+        """Iteracion 2: tras SALIR con OK no envia mas mensajes."""
+        servidor = ServidorUDPDePrueba(respuestas=["OK 0", "0", "OK"])
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.5)
+        salida = io.StringIO()
+
+        cliente.ejecutar_mensajes(
+            ["NUMERO", "BUSCAR inexistente", "SALIR", "NUMERO"],
+            salida=salida,
+        )
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertEqual(servidor.mensajes_recibidos, ["NUMERO", "BUSCAR inexistente", "SALIR"])
+
+    def test_cliente_imprime_error_si_no_recibe_respuesta(self):
+        """Iteracion 2: el cliente informa de error si el servidor no responde."""
+        servidor = ServidorUDPDePrueba(responder=False)
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.1)
+        salida = io.StringIO()
+
+        cliente.ejecutar_mensajes(["NUMERO"], salida=salida)
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertIn("ERROR", salida.getvalue())
+
+    def test_cliente_cierra_socket_correctamente(self):
+        """Iteracion 2: el cliente cierra correctamente su socket UDP."""
+        servidor = ServidorUDPDePrueba(respuestas=["OK 0"])
+        servidor.iniciar()
+        cliente = ClienteUDP(host="127.0.0.1", puerto=servidor.puerto, timeout=0.5)
+
+        cliente.enviar_mensaje("NUMERO")
+        cliente.cerrar()
+        servidor.esperar_fin()
+
+        self.assertTrue(cliente.esta_cerrado)
+
+
+if __name__ == "__main__":
+    unittest.main()
