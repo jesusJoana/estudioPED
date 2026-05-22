@@ -6,7 +6,9 @@ HOST_POR_DEFECTO = "127.0.0.1"
 PUERTO_POR_DEFECTO = 16063
 TAMANO_BUFFER = 65535
 TIMEOUT_POR_DEFECTO = 5.0
+MINIMO_MENSAJES_CLIENTE = 3
 
+COMANDO_NUMERO = "NUMERO"
 COMANDO_SALIR = "SALIR"
 RESPUESTA_OK = "OK"
 MENSAJE_ERROR_COMUNICACION = "ERROR: no se pudo comunicar con el servidor"
@@ -51,14 +53,17 @@ class ClienteUDP:
         salida = salida or sys.stdout
 
         numero_mensaje = 1
-        for linea in entrada:
-            mensaje = linea.rstrip("\n")
+        mensajes_enviados = 0
+
+        while True:
+            mensaje = self._leer_mensaje(entrada, mensajes_enviados)
             if not mensaje:
-                continue
+                break
 
             print(f"Mensaje {numero_mensaje}: {mensaje}", file=salida)
             debe_terminar = self.ejecutar_mensajes([mensaje], salida=salida)
             numero_mensaje += 1
+            mensajes_enviados += 1
 
             if debe_terminar:
                 break
@@ -80,3 +85,17 @@ class ClienteUDP:
 
     def _es_salida_confirmada(self, mensaje, respuesta):
         return mensaje == COMANDO_SALIR and respuesta == RESPUESTA_OK
+
+    def _leer_mensaje(self, entrada, mensajes_enviados):
+        linea = entrada.readline()
+
+        if linea:
+            return linea.rstrip("\n")
+
+        if mensajes_enviados >= MINIMO_MENSAJES_CLIENTE:
+            return None
+
+        if mensajes_enviados == MINIMO_MENSAJES_CLIENTE - 1:
+            return COMANDO_SALIR
+
+        return COMANDO_NUMERO
