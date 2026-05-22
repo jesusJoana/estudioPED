@@ -7,6 +7,8 @@ PUERTO_POR_DEFECTO = 16063
 TAMANO_BUFFER = 65535
 TIMEOUT_POR_DEFECTO = 5.0
 MINIMO_MENSAJES_CLIENTE = 3
+PUERTO_MINIMO = 1
+PUERTO_MAXIMO = 65535
 
 COMANDO_NUMERO = "NUMERO"
 COMANDO_SALIR = "SALIR"
@@ -48,6 +50,9 @@ class ClienteUDP:
         except ValueError as exc:
             raise ValueError(MENSAJE_ERROR_DIRECCION) from exc
 
+        if not cls._puerto_es_valido(puerto):
+            raise ValueError(MENSAJE_ERROR_DIRECCION)
+
         return host, puerto
 
     @classmethod
@@ -65,16 +70,27 @@ class ClienteUDP:
         salida = salida or sys.stdout
 
         try:
-            host, puerto = cls.pedir_direccion_servidor(entrada=entrada, salida=salida)
-            cliente = cls(host=host, puerto=puerto, timeout=timeout)
-        except (OSError, ValueError):
+            cliente = cls._crear_desde_entrada(entrada, salida, timeout)
+        except ValueError:
             print(MENSAJE_ERROR_DIRECCION, file=salida)
+            return
+        except OSError:
+            print(MENSAJE_ERROR_COMUNICACION, file=salida)
             return
 
         try:
             cliente.ejecutar_interactivo(entrada=entrada, salida=salida)
         finally:
             cliente.cerrar()
+
+    @classmethod
+    def _crear_desde_entrada(cls, entrada, salida, timeout):
+        host, puerto = cls.pedir_direccion_servidor(entrada=entrada, salida=salida)
+        return cls(host=host, puerto=puerto, timeout=timeout)
+
+    @classmethod
+    def _puerto_es_valido(cls, puerto):
+        return PUERTO_MINIMO <= puerto <= PUERTO_MAXIMO
 
     def enviar_mensaje(self, mensaje):
         self.socket.send(mensaje.encode("utf-8"))
