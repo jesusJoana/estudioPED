@@ -4,6 +4,8 @@ import socket
 ORDEN_SALIR = "SALIR"
 MINIMO_PETICIONES = 3
 TAM_BUFFER = 1024
+TIMEOUT_CONEXION = 2
+CODIFICACION = "utf-8"
 
 
 class ClienteTCP:
@@ -27,9 +29,9 @@ class ClienteTCP:
     def enviar_peticion(self, mensaje):
         """Envia una peticion TCP al servidor y devuelve la respuesta."""
         try:
-            with socket.create_connection((self.host, self.puerto), timeout=2) as cliente:
-                cliente.sendall((mensaje + "\n").encode("utf-8"))
-                respuesta = cliente.recv(TAM_BUFFER).decode("utf-8").strip()
+            with self._abrir_conexion() as cliente:
+                cliente.sendall(self._codificar_mensaje(mensaje))
+                respuesta = self._recibir_respuesta(cliente)
         except OSError as error:
             print(f"ERROR: {error}")
             return None
@@ -51,10 +53,26 @@ class ClienteTCP:
 
     def _procesar_salida(self):
         """Aplica la regla de minimo de peticiones antes de cerrar."""
-        faltan = MINIMO_PETICIONES - self.peticiones_enviadas
+        faltan = self._peticiones_pendientes()
 
         if faltan > 0:
             return f"Faltan {faltan} mensajes antes de poder cerrar el cliente"
 
         self.activo = False
         return None
+
+    def _abrir_conexion(self):
+        """Crea una conexion TCP con el servidor configurado."""
+        return socket.create_connection((self.host, self.puerto), timeout=TIMEOUT_CONEXION)
+
+    def _codificar_mensaje(self, mensaje):
+        """Prepara el mensaje para enviarlo por TCP."""
+        return (mensaje + "\n").encode(CODIFICACION)
+
+    def _recibir_respuesta(self, cliente):
+        """Lee y decodifica la respuesta del servidor."""
+        return cliente.recv(TAM_BUFFER).decode(CODIFICACION).strip()
+
+    def _peticiones_pendientes(self):
+        """Calcula cuantas peticiones faltan para poder salir."""
+        return MINIMO_PETICIONES - self.peticiones_enviadas
