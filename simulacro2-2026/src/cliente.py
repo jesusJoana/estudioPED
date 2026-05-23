@@ -7,6 +7,11 @@ class ClienteUDP:
     ORDEN_SALIR = "SALIR"
     MIN_MENSAJES_PARA_SALIR = 3
     TAMANO_BUFFER = 1024
+    MENSAJE_ERROR_COMUNICACION = "Error de comunicacion con el servidor"
+    MENSAJE_SALIDA_DENEGADA = (
+        "Aun no es posible salir. Debes enviar al menos 3 mensajes al servidor."
+    )
+    MENSAJE_FIN_CLIENTE = "Cliente finalizado correctamente."
 
     def __init__(self, host_servidor="127.0.0.1", puerto=16063, timeout=2):
         self.host_servidor = host_servidor
@@ -16,7 +21,7 @@ class ClienteUDP:
 
     def enviar_mensaje(self, mensaje):
         try:
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as cliente:
+            with self._crear_socket() as cliente:
                 cliente.settimeout(self.timeout)
                 cliente.sendto(
                     mensaje.encode("utf-8"),
@@ -25,7 +30,7 @@ class ClienteUDP:
                 datos, _ = cliente.recvfrom(self.TAMANO_BUFFER)
                 return datos.decode("utf-8")
         except OSError as error:
-            print(f"Error de comunicacion con el servidor: {error}")
+            print(f"{self.MENSAJE_ERROR_COMUNICACION}: {error}")
             return None
 
     def procesar_entrada(self, mensaje):
@@ -48,10 +53,16 @@ class ClienteUDP:
             mensaje = input("Mensaje: ")
             continuar = self.procesar_entrada(mensaje)
 
-        print("Cliente finalizado correctamente.")
+        print(self.MENSAJE_FIN_CLIENTE)
 
     def _procesar_salida(self):
-        if self.mensajes_enviados < self.MIN_MENSAJES_PARA_SALIR:
-            print("Aun no es posible salir. Debes enviar al menos 3 mensajes al servidor.")
+        if not self._puede_salir():
+            print(self.MENSAJE_SALIDA_DENEGADA)
             return True
         return False
+
+    def _puede_salir(self):
+        return self.mensajes_enviados >= self.MIN_MENSAJES_PARA_SALIR
+
+    def _crear_socket(self):
+        return socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
