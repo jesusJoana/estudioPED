@@ -1,0 +1,131 @@
+INSTALL - Sistema cliente-servidor UDP
+======================================
+
+1. Requisitos
+-------------
+
+- Sistema Linux.
+- Python 3.
+- make.
+- venv disponible para Python.
+
+No se necesitan dependencias externas aparte de la libreria estandar de Python.
+
+2. Preparacion del entorno
+--------------------------
+
+Entrar en la carpeta del proyecto:
+
+cd simulacro2-2026
+
+Crear el entorno virtual e instalar dependencias si existieran:
+
+make install
+
+Este comando crea la carpeta venv y actualiza pip. Si existe un fichero
+requirements.txt, tambien instala su contenido.
+
+3. Ejecutar pruebas
+-------------------
+
+Para ejecutar toda la suite automatizada:
+
+make test
+
+El comando ejecuta unittest:
+
+venv/bin/python -m unittest discover -s tests -v
+
+4. Ejecutar el servidor
+-----------------------
+
+Desde la carpeta del proyecto:
+
+make run-server
+
+Equivalente:
+
+make server
+
+El servidor escucha peticiones UDP en el puerto 16063.
+
+5. Ejecutar el cliente
+----------------------
+
+En otra terminal, desde la carpeta del proyecto:
+
+make run-client
+
+Equivalente:
+
+make client
+
+Al arrancar, el cliente pedira la direccion del servidor. En local se debe
+introducir:
+
+127.0.0.1
+
+6. Ejemplos de mensajes
+-----------------------
+
+Con el servidor en ejecucion y el cliente conectado a 127.0.0.1, se pueden
+probar los siguientes mensajes:
+
+Mensaje valido para pedir la fecha:
+
+Mensaje: FECHA
+23/05/2026
+
+Mensaje valido para pedir la hora:
+
+Mensaje: HORA
+18:42:10
+
+Mensaje no valido por estar en minusculas:
+
+Mensaje: fecha
+ERROR
+
+Mensaje no valido por no pertenecer al protocolo:
+
+Mensaje: HOLA
+ERROR
+
+La orden SALIR no se envia al servidor. Si se usa antes de haber enviado 3
+mensajes reales, el cliente no finaliza:
+
+Mensaje: SALIR
+Aun no es posible salir. Debes enviar al menos 3 mensajes al servidor.
+
+Despues de enviar al menos 3 mensajes reales al servidor, SALIR cierra el
+cliente:
+
+Mensaje: SALIR
+Cliente finalizado correctamente.
+
+7. Ejecucion manual sin make
+----------------------------
+
+Servidor:
+
+venv/bin/python main.py servidor
+
+Cliente:
+
+venv/bin/python main.py cliente
+
+8. Limpieza
+-----------
+
+Para eliminar ficheros temporales de Python:
+
+make clean
+
+9. Comandos principales
+-----------------------
+
+make install     Prepara el entorno virtual.
+make test        Ejecuta las pruebas automatizadas.
+make run-server  Lanza el servidor UDP.
+make run-client  Lanza el cliente UDP.
+make clean       Limpia __pycache__ y ficheros .pyc.
