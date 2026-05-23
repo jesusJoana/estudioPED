@@ -47,7 +47,9 @@ class ClienteUDP:
 
     def ejecutar(self):
         self.host_servidor = input("Introduce la direccion del servidor: ")
+        self.ejecutar_interactivo()
 
+    def ejecutar_interactivo(self):
         continuar = True
         while continuar:
             mensaje = input("Mensaje: ")
