@@ -1,6 +1,7 @@
 import io
 import socket
 import threading
+import time
 import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
@@ -155,6 +156,7 @@ class TestClienteUDP(unittest.TestCase):
         for _ in range(100):
             if servidor.puerto != 0:
                 return servidor, hilo
+            time.sleep(0.01)
 
         servidor.detener()
         self.fail("El servidor UDP de prueba no quedo listo")
